@@ -20,29 +20,7 @@ from utils.build_utils import (
 )
 import random
 
-PRE_SURVEY_LIST = [WelcomePage(),
-
-    Form("Pre Task Survey",
-        Section("",
-            CheckBox(
-            title="What kind of movies do you like?",
-            items=["Action movies", "Horror movies", "Mystery movies", "Comedy movies",
-             "Documentary movies", "Drama movies", "Sci-fi movies"]
-            ),
-
-            FreeResponse(
-            title="Please list at least one of your favorite movies."
-            ),
-
-            FreeResponse(
-            title="Please list at least one of your favorite actors."
-            ),
-
-            FreeResponse(
-            title="Please list at least one of your favorite directors."
-            ),
-        ),
-    ),]
+PRE_SURVEY_LIST = [WelcomePage()]
 
 CYAN_BOT_TASK_LIST = [Task(
         """
@@ -465,19 +443,9 @@ RED_BOT_TASK_LIST = [Task(
         ),
     ),]
 
-FINISH_PAGE = [Form("Post Task Survey 4",
-        Section("",
-            CheckBox(
-                title="What kind of movies do you like?",
-                items=["Action", "Horror movies", "Mystery movies", "Comedy movies",
-                "Documentary movies", "Drama movies", "Sci-fi movies"]
-            ),
-            FreeResponse("do you have any additional feedback on your chat experience?", required=False),
-        )
-    ),
-    FinishPage(),]
+FINISH_PAGE = [FinishPage()]
 
-PAGE_ORDER = [CYAN_BOT_TASK_LIST, RED_BOT_TASK_LIST, GREEN_BOT_TASK_LIST, BLUE_BOT_TASK_LIST, YELLOW_BOT_TASK_LIST]
+PAGE_ORDER = [RED_BOT_TASK_LIST]
 random.shuffle(PAGE_ORDER)
 TASKS_LIST = []
 for sublist in PAGE_ORDER:

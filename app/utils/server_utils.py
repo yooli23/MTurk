@@ -48,21 +48,21 @@ class Task:
 
     def __init__(self, task_id: str, args):
         #Debug
-        # self.assignment_id = None
-        # self.hit_id = None
-        # self.worker_id = None
+        self.assignment_id = None
+        self.hit_id = None
+        self.worker_id = None
 
         self.task_id = task_id
         self.__dict__.update(**TaskHelper.parse_mturk_args(args))  
         self.__dict__.update(Settings().__dict__)
 
         #Debug
-        # if not self.assignment_id:
-        #     self.assignment_id = "abc"
-        # if not self.hit_id:
-        #     self.hit_id = "abcd"
-        # if not self.worker_id:
-        #     self.worker_id = "dcba"
+        if not self.assignment_id:
+            self.assignment_id = "abc"
+        if not self.hit_id:
+            self.hit_id = "abcd"
+        if not self.worker_id:
+            self.worker_id = "dcba"
 
         self.end_point = TaskHelper.get_end_point()
         self.layout = TaskHelper.compile()

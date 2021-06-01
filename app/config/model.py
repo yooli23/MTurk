@@ -76,7 +76,8 @@ def speak(task_id, agent_name, context, user_utterance, model):
         if 'response' in res:
             response = res['response']
             end_chat = res['end_chat']
-        return response, end_chat
+        return "TEST", False
+        # return response, end_chat
     elif agent_name == 'yellow':
         if len(context)-1 == 20:
             return "Task Finished!", True

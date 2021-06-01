@@ -12,7 +12,7 @@ database = {
 server = {
     'server_secret_key': 'secret',   
     'port': 6777,
-    'debug': False,
+    'debug': True,
     'logger': False,
     'front_end_socketio_path': '/crisisbotsocket',    
     'server_socketio_path': '/socket.io',
@@ -21,19 +21,15 @@ server = {
 # Task options
 task = {
     'human_speaks_first': False,    
-    'task_name': 'Chatbot Evaluation Task, $3 in total',  
-    'task_short_description': 'You will chat with five chatbots and finish surveys.',
+    'task_name': 'movie recommendation chatbot demo',  
+    'task_short_description': 'This is a movie recommendation chatbot demo',
     'task_key_words': "label text, binary, yes, no, context, bonus, grammer, english",       
     'task_instructions': """
                     For this task, you are a movie seeker and you are looking for a movie trailer.
 
-                    You will be chatting with five different movie recommendation chatbots. 
-
-                    Please complete the pre-task survey, then chat with each chatbot for approximately 3 to 5 minutes.
+                    You will be chatting with a movie recommendation chatbots. 
                     
-                    You need to complete a post-task survey after you chat with each chatbot. The task will take you around 20 minutes to complete.
-
-                    Basic reward is $1.5, if you finish the task correctly and successfully, we will pay you extra $1.5 bonus.
+                    The task will take you around 20 minutes to complete.
                     """,    
     'move_instructions_to_top': True,
     'enable_agent_title': True,    
