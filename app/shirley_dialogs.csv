@@ -1,0 +1,48 @@
+,bot,human
+0,"Hello there, I am here to help you look for a movie trailer","hi,  i am looking for a scientific movie"
+1,What kind of movies are you interested in?,scientific movie
+2,"Have you seen the movie ""Talladega Nights: The Ballad of Ricky Bobby""","nope, but i think that is a comedy. I would like a sci-fi movie"
+3,A good one that I can recommend is The Irishman.,"well, though it is not a sci-fi movie, what does it talk about?"
+4,It has great reviews.,can you describe more about it?
+5,"The plot is like this: ""Pennsylvania, 1956. Frank Sheeran, a war veteran of Irish origin who works as a truck driver, accidentally meets mobster Russell Bufalino. Once Frank becomes his trusted man, Bufalino sends him to Chicago with the task of helping Jimmy Hoffa, a powerful union leader related to organized crime, with whom Frank will maintain a close friendship for nearly twenty years.""","sounds not bad, do you have the link of the trailor?"
+6,"The plot is like this: ""Pennsylvania, 1956. Frank Sheeran, a war veteran of Irish origin who works as a truck driver, accidentally meets mobster Russell Bufalino. Once Frank becomes his trusted man, Bufalino sends him to Chicago with the task of helping Jimmy Hoffa, a powerful union leader related to organized crime, with whom Frank will maintain a close friendship for nearly twenty years.""",accept
+7,Thanks for chatting with me!,
+8,,
+9,"Hi, I am here to help you find a movie trailer.",thats great!
+10,What type of movies do you like?,comedy
+11,I like comedy and comedy too. What was the last comedy movie you saw?,The Pursuit of Happyness
+12,It was a great movie. I liked the way that it made you laugh.,yeah but its also a warm movie
+13,Do you like action movies with a bit of comedy and comedy?,yes
+14,Have you ever seen Like a Boss?,nope
+15,It is a great movie. Would you like to see the trailer for it?,sure
+16,You should definitely check it out.,[accept]
+17,Thanks for chatting with me!,
+18,,
+19,"Hello, I am here to help you look for a movie trailer.",Thanks! Could you recommend some sci-fi movie?
+20,what was the last sci-fi movie you watched?,Back to the future.
+21,So would you like to watch the movie trailer for The Irishman.,"No, it is not sci-fi."
+22,What is the last sci-fi movie you watched?,It is back to the future.
+23,Great! I am happy that I can help you today. Have you seen Midway?,"No, what does it talk about?"
+24,It is the sequel to the original Star Wars.,Cool! Who is the director?
+25,Patrick Wilson  .,Are you sure he is the director?
+26,"Yes, he is. He directed Mary Queen of Scots.",I thought you are talking about Midway.
+27,"Yes, he directed that movie as well.",Are you sure Midway is a sci-fi movie?
+28,"Yes it is, I think it has a lot of biography movies.",quit
+29,Thanks for chatting with me!,
+30,,
+31,"hi, Im here to help you find a movie trailer",hi
+32,What kind of movies do you like?,I like sci-fi movies
+33,I love sci-fi movies too. What was the last action movie you watched?,"ehh, 007"
+34,Thats an awesome movie. I love the whole The Irishman. There are some interesting actors and actresses in it.,quit
+35,Thanks for chatting with me!,
+36,,
+37,Hi there. How are you today?,I am doing good. How are you?
+38,Im doing great. How are you doing today?,I am doing very well
+39,"Do you like movies, or do you just want a good movie to watch?",I like movies
+40,What genre are you interested in?,action
+41,"I really recommend Game Over, Man! . It is about ""In a world where human beings and puppets live together, when the members of the cast of a childrens television show aired during the 1990s begin to get murdered one by one, puppet Phil Philips, a former LAPD detective who fell in disgrace and turned into a private eye, takes on the case at the request of his old boss in order to assist detective Edwards, who was his partner in the past."" It also has a sequel called The Happytime Murders.","0kay, why you recommend it"
+42,"I also recommend Game Over, Man!. I think it is a very good movie.","cool, who is the main actor of this movie?"
+43,I think the movie has great actors in it!,alright what about your favorite part of this movie
+44,The movie Get Shorty is really good. It is a comedy.,quit
+45,Thanks for chatting with me!,
+46,,

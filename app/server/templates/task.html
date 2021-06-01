@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{task_name}}</title>
+        <meta charset="utf-8">        
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">        
+        <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>        
+        <script src="https://cdn.jsdelivr.net/vue/latest/vue.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/botui/build/botui-theme-default.css" />
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+        <script src="https://surveyjs.azureedge.net/1.7.18/survey.jquery.js"></script>
+        <link href="https://surveyjs.azureedge.net/1.7.18/modern.css" type="text/css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/botui/build/botui.js"></script>
+        
+    </head>
+
+    <script>
+
+        // Preloaded Variables
+        var socket;
+        var task_id = "{{task_id}}";        
+        var layout = JSON.parse('{{ layout | tojson | safe}}');  
+        var human_speaks_first = JSON.parse('{{ human_speaks_first | tojson | safe }}');
+        var task_instructions = "{% for para in task_instructions %} <p>{{para}}</p><br> {% endfor %}";
+
+        // Options
+        var prefix_message = JSON.parse('{{ prefix_message | tojson | safe }}');  
+        var show_page_number = JSON.parse('{{ show_page_number | tojson | safe }}');
+
+        // MTurk
+        var assignment_id = "{{assignment_id}}";
+        var end_point = "{{end_point}}";
+
+        // State
+        var user_accepted_task = JSON.parse('{{ user_accepted_task | tojson | safe }}')
+        var current_section = JSON.parse('{{ current_section | tojson | safe }}'); 
+        var task_complete = JSON.parse('{{ task_complete | tojson | safe }}'); 
+        var previous_messages = JSON.parse('{{ previous_messages | tojson | safe }}'); 
+        var agents_resigned = JSON.parse('{{ agents_resigned | tojson | safe }}');         
+
+        // Temp Variables  
+        var active_agents = [];
+
+        $(document).ready(function() {   
+
+            // Init Socket
+            if (location.protocol !== 'https:') {                
+                socket = io.connect('http://' + document.domain + ':' + location.port, {path: "{{socket_path}}"});                         
+            }else{
+                socket = io.connect('https://' + document.domain + ':' + location.port, {path: "{{socket_path}}"});                
+            }      
+
+            // Register task_id
+            socket.emit('register_user', {'task_id': task_id})
+
+            // Init Survey.js
+            Survey.StylesManager.applyTheme("modern"); 
+            
+            function reset_state() {
+                document.getElementById("chat_bot_container").innerHTML = '';                
+                document.getElementById("chat_bot_container").style = '';
+                document.getElementById("page").innerHTML = '';                
+                document.getElementById('survey').innerHTML = '';
+                document.getElementById('instructions').innerHTML = '';
+                active_agents = [];
+            }
+            
+            function layout_section(idx) {
+                reset_state();
+
+                socket.emit('section_started', {'task_id': task_id, 'section': current_section});
+
+                if (show_page_number == true) {
+                    if (current_section+1 <= layout.length) {
+                        var page_count = document.getElementById("page_count");
+                        page_count.innerHTML = (current_section+1).toString() + " / " + (layout.length).toString();
+                    }else{
+                        document.getElementById("page_count").innerHTML = "";
+                    }
+                }
+
+                try {
+                    var section = layout[idx];
+                    var section_type = section['type'];
+                    var section_data = section['data'];
+
+                    if (section_type == 'form') {
+                        layout_form(section_data);
+                    }else if (section_type == 'task') {
+                        layout_task(section_data, section['instructions']);
+                    }else if (section_type == 'page') {
+                        layout_page(section_data);
+                    }
+                } catch (error) {                    
+                    // Emit finish task - ping back server...
+                    console.log(error);                    
+                    socket.emit('task_complete', {'task_id': task_id});                                                                  
+                }
+            }
+                                                         
+            function layout_form(data) {
+
+                window.survey = new Survey.Model(data);
+
+                survey.onComplete.add(function (result) {
+                    var json_survey_results = JSON.stringify(result.data, null, 3);                              
+                    socket.emit('form_complete', {'task_id': task_id, 'form': json_survey_results, 'title': data.title});
+                    current_section += 1;
+                    layout_section(current_section);              
+                });
+
+                // Load survey
+                try {
+                    $("#survey").Survey({model: survey});    
+                }  catch(err) {                    
+                    alert("Uh oh. Could not load survey!");
+                }   
+            }
+            
+            function layout_task(agents, instructions) {                       
+                for (var i = 0; i < agents.length; i++) {         
+                    var agent = agents[i];
+                    var bot = layout_agent(agent);                    
+                    load_previous_messages(bot, agent);
+                    parley(bot, agent);                                    
+                }
+                layout_instructions(instructions);
+            }
+
+            function agent_resigned(agent) {
+                return agents_resigned[agent.data.name];
+            }
+
+            function parley(bot, agent) {            
+                if (task_complete == true || agent_resigned(agent) == true) {                    
+                    return;
+                }
+                if (previous_messages[agent.data.name].length == 0) {
+                    if (human_speaks_first) {
+                        bot.action.text({action: {placeholder: 'Type response here...'}, addMessage: false}).then(function(res) {
+                            var text = res.value;
+                            var displayed_text = text;
+                            if (prefix_message == true) displayed_text = "<b>You:  </b>" + text;
+                            bot.message.add({content: displayed_text, human: true, type: 'html', cssClass: "humanColor"});
+                            socket.emit('request_model_utterance', {'text':text, 'task_id':task_id, 'agent_name': agent.data.name});                     
+                        });
+                    }else{               
+                        socket.emit('request_model_utterance', {'task_id': task_id, 'agent_name': agent.data.name, 'text': ''})
+                    }
+                }else{
+                    bot.action.text({action: {placeholder: 'Type response here...'}, addMessage: false}).then(function(res) {
+                        var text = res.value;
+                        var displayed_text = text;
+
+                        if (prefix_message == true) displayed_text = "<b>You:  </b>" + text;
+                        bot.message.add({content: displayed_text, human: true, type:'html', cssClass: "humanColor"});
+                        socket.emit('request_model_utterance', {'text':text, 'task_id':task_id, 'agent_name': agent.data.name});                     
+                    });
+                }
+            }
+
+            function load_previous_messages(bot, agent) {                
+                if (agent.data.name in previous_messages) {                
+                    var messages = previous_messages[agent.data.name];                    
+                    for (var i = 0; i < messages.length; i++) {                    
+                        var message = messages[i];
+                        if (message['human'] != '') {
+                            var text = message['human'];
+                            if (prefix_message == true && !text.includes("You:  ")) text = "<b>You: </b>" + text;
+                            bot.message.add({content: text, type: 'html', human: true, cssClass: "humanColor"});
+                        }
+                        if (message['bot'] != '') {
+                            if (prefix_message == true) message['bot'] = "<b>" + agent.data.title + ": </b>" + message['bot'];
+                            bot.message.add({content: message['bot'], type: 'html', cssClass: agent.data.color});
+                        }
+                    }
+                    if (agent_resigned(agent) == true) {
+                        var bot = get_bot_from_agent_name(agent.data.name)[0];
+                        bot.action.button({
+                            action: [
+                                { // show only one button
+                                text: 'Complete Chat',
+                                value: 'done'
+                                }
+                            ]
+                        }).then(function (res) { 
+                            try_move_on_from_task_next_section();
+                        });
+                    }
+                }
+            }
+                
+            function layout_agent(agent) {  
+                // Create HTML          
+                var container = document.getElementById("chat_bot_container");
+                    var column = document.createElement('div');                    
+                    column.className = "column";
+                    column.style = "max-width: 400px;";
+                        var bot_title = document.createElement('p');
+                        bot_title.style = "width: 100%; text-align: center;";
+                        bot_title.className = "subtitle";
+                        bot_title.innerHTML = agent.data.title;                                   
+                        var bot = document.createElement("bot-ui");
+                        bot.style = "max-height: 500px;";
+                        bot.id = agent.data.name;                                                    
+                    column.appendChild(bot_title);
+                    column.appendChild(bot);
+                container.appendChild(column);
+
+                // Create Bot
+                var bot = new BotUI(agent.data.name);                    
+                active_agents.push({'agent': agent, 'bot': bot});
+                return bot;
+            }
+
+            function layout_instructions(instructions) {
+                var instructions_div = document.getElementById('instructions');
+                    var bot_title = document.createElement('p');
+                    bot_title.style = "width: 100%; text-align: left;";
+                    bot_title.className = "title";
+                    bot_title.innerHTML = "Instructions";
+                    var instruction_text = document.createElement('p');
+                    instruction_text.style = "width: 100%; text-align: left;";
+                    instruction_text.innerHTML = instructions;
+                instructions_div.appendChild(bot_title);
+                instructions_div.appendChild(instruction_text);
+            }
+
+            function layout_page(data) {
+                var page = document.getElementById("page");
+
+                var title = document.createElement('p');
+                title.style = "text-align: left;";
+                title.className = "title";
+                title.innerHTML = data['title'];
+                page.appendChild(title);
+                
+                var text = document.createElement('p');
+                text.style = "text-align: left; margin-top: 20px; font-size: " + data['text_font_size'].toString() + "px;";                
+                text.innerHTML = data['text'];
+                page.appendChild(text);
+
+                var button = document.createElement('button');
+                button.className = "button is-primary is-rounded";
+                button.innerHTML = data['next_button_text'];   
+                button.style = "margin-top: 50px; width: auto;";
+                page.appendChild(button);
+
+                button.onclick = function() {  
+                    if (user_accepted_task == false) return;                  
+                    current_section += 1;
+                    layout_section(current_section);
+                }
+            }
+
+            function get_bot_from_agent_name(agent_name) {
+                for (var i = 0; i < active_agents.length; i++) {
+                    if (active_agents[i]['agent'].data.name == agent_name) {
+                        return [active_agents[i]['bot'], active_agents[i]['agent']];
+                    }
+                }
+                alert("MASSIVE ERROR! ABORT MISSION NOW! ABORT!");
+                return [];
+            }
+
+            function try_move_on_from_task_next_section() {
+                var can_move_on = true;
+                for (var i = 0; i < active_agents.length; i++) {                    
+                    if (agent_resigned(active_agents[i]['agent']) == false)
+                        can_move_on = false;
+                }
+                if (can_move_on) {
+                    current_section += 1;
+                    layout_section(current_section);
+                }
+            }
+
+            function speak_follow_up(bot, agent, agent_name) {
+                if (task_complete == true) return;
+
+                if (agent_resigned(agent) == true) {
+
+                }else{
+                    bot.action.text({action: {placeholder: 'Type response here...'}, addMessage: false}).then(function(res) {
+                        var text = res.value;
+                        var displayed_text = text;
+                        if (prefix_message == true) displayed_text = "<b>You:  </b>" + text;
+                        bot.message.add({content: displayed_text, human: true, type: 'html', cssClass: "humanColor"});
+                        socket.emit('request_model_utterance', {'text':text, 'task_id':task_id, 'agent_name': agent_name});                     
+                    });    
+                }
+            }
+
+            socket.on('speak', function(data) {                                
+                var text = data['text'];
+                var delay = data['typing_delay'];
+                var agent_name = data['agent_name'];
+                var active_state = get_bot_from_agent_name(agent_name);
+                var bot = active_state[0];
+                var agent = active_state[1];
+
+                // Temp fix
+                // Add BotTitle: Message
+                if (agent.data.title != "" && prefix_message == true && text != '') {
+                    text = "<b>" + agent.data.title + ": </b>" + text;
+                }
+                
+                if (text.includes("[SYSTEM]"))
+                    text = "<b>" + text + "</b>";
+
+                if (text == '') {
+                    speak_follow_up(bot, agent, agent_name);
+                    return;
+                }
+
+                bot.message.add({content: text, delay: delay, loading: true, type: 'html', cssClass:agent.data.color}).then(function() {
+                    speak_follow_up(bot, agent, agent_name);
+                });
+            });
+                                         
+            socket.on('agent_resigned', function(data) {                
+                var name = data['agent_name'];
+                agents_resigned[name] = true;
+                var bot = get_bot_from_agent_name(name)[0];
+                bot.action.button({
+                    action: [
+                        { // show only one button
+                        text: 'Complete Chat',
+                        value: 'done'
+                        }
+                    ]
+                }).then(function (res) { 
+                    try_move_on_from_task_next_section();
+                });
+            });
+
+            socket.on('submit_mturk_form', function(data) {
+                // Submit form
+                var form = document.getElementById("turkSubmit");
+                form.action = end_point;
+                $('#assignmentId').val(assignment_id);                                                                        
+                form.submit();  
+            });
+
+            // Layout a section to start the task
+            layout_section(current_section);
+        });        
+    </script>
+
+    <body>        
+        <div class="container" style="padding-left: 10px; padding-right: 10px;">
+            <!-- Survey -->       
+            <div id="survey" style="display: inline-block; width:100%;"></div>        
+
+            <!-- Page -->        
+            <div id = "page"></div>
+    
+            <!-- Task -->          
+            <div id="task">
+                {% if move_instructions_to_top %}
+                    <div id="instructions" style="margin-top: 20px;"></div>
+                {% endif %}
+                <div class="columns is-desktop is-multiline is-centered" id="chat_bot_container"></div>                     
+                {% if move_instructions_to_bottom %}
+                    <div id="instructions" style="margin-top: 20px;"></div>
+                {% endif %}
+            </div>
+            
+            <!-- Submit Form -->
+            <form id="turkSubmit" action="" method="post">                    
+                <input type="hidden" name="assignmentId" id="assignmentId" value="">
+                <input type="hidden" name="foo" id="foo" value="bar">
+            </form>
+        </div>  
+
+        <!-- Page Count -->
+        <p style="text-align: center; position: absolute; bottom: 50px; width: 100%;" id="page_count"></p>
+    </body>
+
+    <style>
+        .humanColor div.botui-message-content {
+            color: #404040;
+            background-color: #ebebeb;
+        }
+
+        .botui-actions-buttons-button {
+            color: #404040;
+            background-color: #ebebeb;
+        }
+
+        .blue div.botui-message-content {
+            color: white;
+            background-color: #0984e3;
+        }   
+
+        .red div.botui-message-content {
+            color: white;
+            background-color: #d63031;
+        }   
+
+        .yellow div.botui-message-content {
+            color: white;
+            background-color: #fdcb6e;
+        }  
+
+        .cyan div.botui-message-content {
+            color: white;
+            background-color: #18c9c6;
+        }  
+
+        .green div.botui-message-content {
+            color: white;
+            background-color: #27ae60;
+        }  
+
+        .purple div.botui-message-content {
+            color: white;
+            background-color: #6c5ce7;
+        }  
+
+        .orange div.botui-message-content {
+            color: white;
+            background-color: #e17055;
+        }  
+
+        .mint div.botui-message-content {
+            color: white;
+            background-color: #00b894;
+        }                                                   
+    </style>
+</html>
