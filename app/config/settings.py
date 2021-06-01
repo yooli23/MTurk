@@ -12,7 +12,7 @@ database = {
 server = {
     'server_secret_key': 'secret',   
     'port': 6777,
-    'debug': True,
+    'debug': False,
     'logger': False,
     'front_end_socketio_path': '/crisisbotsocket',    
     'server_socketio_path': '/socket.io',

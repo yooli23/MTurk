@@ -46,7 +46,6 @@ def register_user(data):
 
 @socketio.on('request_model_utterance')
 def send_model_utterance(data):
-    print("#################################################################################################################################")
     # Extract data
     task_id = data['task_id']
     user_utterance = data['text']
